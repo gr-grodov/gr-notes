@@ -49,7 +49,7 @@ final class OidcDiscovery(config: OidcConfig)(implicit system: ActorSystem[_], e
 
             validate(
                 "code_challenge_methods_supported",
-                "client_secret_basic",
+                "S256",
                 metadata.codeChallengeMethodsSupported
             )(_.contains(_)),
 
