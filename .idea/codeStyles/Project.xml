@@ -7,6 +7,7 @@
       </value>
     </option>
     <codeStyleSettings language="Scala">
+      <option name="ALIGN_MULTILINE_PARAMETERS" value="false" />
       <indentOptions>
         <option name="INDENT_SIZE" value="4" />
         <option name="CONTINUATION_INDENT_SIZE" value="4" />

@@ -2,11 +2,14 @@ import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.Directives.concat
+import akka.http.scaladsl.server.Directives.{concat, handleExceptions, handleRejections}
 import common.logs.Logging
 import infrastructure.AppConfig
 import infrastructure.domain.AppDatabase
+import infrastructure.http.{GlobalExceptionHandler, GlobalRejectionHandler}
+import notes.domain.repo.DBNotesRepository
 import notes.http.NotesRoutes
+import notes.service.NotesService
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Failure, Success}
@@ -25,7 +28,19 @@ object Main extends Logging {
         implicit val system: ActorSystem[Nothing] = ActorSystem(Behaviors.empty, "gr-notes")
         implicit val execContext: ExecutionContextExecutor = system.executionContext
 
-        val routes: Route = concat(NotesRoutes.routes)
+        val notesRepository = new DBNotesRepository(database)
+        val notesService = new NotesService(notesRepository)
+        val notesRoutes = new NotesRoutes(notesService)
+
+        val routes: Route =
+            handleExceptions(GlobalExceptionHandler.handler) {
+                handleRejections(GlobalRejectionHandler.handler) {
+                    concat(
+                        notesRoutes.routes,
+                    )
+                }
+            }
+
         val bindingFuture = Http().newServerAt(config.http.interface, config.http.port).bind(routes)
         bindingFuture.onComplete {
             case Success(binding) =>

@@ -1,11 +1,8 @@
 package common.http
 
-import io.circe.generic.auto._
+import common.domain.ErrorField
 
 final case class ErrorResponse(
     code: String,
-    message: String = "",
-    errors: Seq[ErrorFieldDto] = Nil
+    fields: Seq[ErrorField] = Nil
 )
-
-final case class ErrorFieldDto(field: String, code: String)
