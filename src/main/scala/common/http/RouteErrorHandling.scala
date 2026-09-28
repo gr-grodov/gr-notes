@@ -24,7 +24,7 @@ trait RouteErrorHandling[E <: DomainError] {
         case Success(Left(error)) =>
             val (status, response) = errorHandler.handle(error)
             complete(status, response)
-        case Failure(ex) => throw ex
+        case Failure(ex) => failWith(ex)
     }
 
     protected def completeFuture[A](
@@ -32,6 +32,6 @@ trait RouteErrorHandling[E <: DomainError] {
         status: StatusCode = StatusCodes.OK
     ) (implicit marshaller: ToEntityMarshaller[A]): Route = onComplete(result) {
         case Success(value) => complete(status, value)
-        case Failure(ex) => throw ex
+        case Failure(ex) => failWith(ex)
     }
 }

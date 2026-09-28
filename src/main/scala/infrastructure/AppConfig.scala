@@ -27,15 +27,10 @@ object AppConfig {
         )
 
         val oidc = OidcConfig(
-            issuer = config.getString("oidc.issuer"),
-            authorizationEndpoint = config.getString("oidc.authorization_endpoint"),
-            tokenEndpoint = config.getString("oidc.token_endpoint"),
-            jwksUri = config.getString("oidc.jwks_uri"),
-            userinfoEndpoint = config.getString("oidc.userinfo_endpoint"),
-            endSessionEndpoint = config.getString("oidc.end_session_endpoint"),
+            issuer = config.getString("oidc.issuer").stripSuffix("/"),
             clientId = config.getString("oidc.client_id"),
             clientSecret = config.getString("oidc.client_secret"),
-            redirectUri = config.getString("oidc.redirect_uri"),
+            redirectUri = config.getString("oidc.redirect_uri").stripSuffix("/"),
             scopes = config.getStringList("oidc.scopes").asScala.toList
         )
 
