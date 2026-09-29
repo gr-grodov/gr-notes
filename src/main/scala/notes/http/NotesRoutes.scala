@@ -13,7 +13,7 @@ import notes.service.NotesService
 
 import scala.concurrent.ExecutionContext
 
-class NotesRoutes(notesService: NotesService)(implicit ec: ExecutionContext) extends RouteErrorHandling[NotesError] {
+class NotesRoutes(notesService: NotesService) extends RouteErrorHandling[NotesError] {
     override def errorHandler: ErrorHandler[NotesError] = NotesErrorHandler
 
     val routes: Route = pathPrefix("api" / "notes") {

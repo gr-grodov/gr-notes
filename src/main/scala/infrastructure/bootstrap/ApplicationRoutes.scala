@@ -13,7 +13,8 @@ object ApplicationRoutes {
         handleExceptions(GlobalExceptionHandler.handler) {
             handleRejections(GlobalRejectionHandler.handler) {
                 concat(
-                    components.notesRoutes.routes
+                    components.notesRoutes.routes,
+                    components.authRoutes.routes
                 )
             }
         }
