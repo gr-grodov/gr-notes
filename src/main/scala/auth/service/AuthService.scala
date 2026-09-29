@@ -16,18 +16,29 @@ import scala.concurrent.{ExecutionContext, Future}
 final class AuthService (
     oidcConfig: OidcConfig,
     oidcMetadata: OidcMetadata,
+    oidcClientService: OidcClientService,
     loginTransactionActor: ActorRef[OidcLoginTransactionActor.Command]
 ) (implicit system: ActorSystem[_], ec: ExecutionContext) {
 
     private implicit val askTimeout: Timeout = 3.seconds
 
-    def getSSOAuthorizationUri: Future[Uri] = {
+    def ssoLoginURI: Future[Uri] = {
         val state = PKCEUtils.generateState()
         val nonce = PKCEUtils.generateNonce()
         val codeVerifier = PKCEUtils.generateVerifier()
         val codeChallenge = PKCEUtils.generateChallenge(codeVerifier)
 
         startLogin(state, nonce, codeVerifier).map(_ => buildAuthorizationUri(state, nonce, codeChallenge))
+    }
+
+    def callback(code: String, state: String): Future[TokensInfo] = {
+        loginTransactionActor.ask[OidcLoginTransactionActor.ConsumeResult] { replyTo =>
+            OidcLoginTransactionActor.Consume(state, replyTo)
+        }.flatMap {
+            case OidcLoginTransactionActor.ConsumeResult(Some(transaction)) =>
+                oidcClientService.exchangeCode(code = code, codeVerifier = transaction.codeVerifier)
+            case _ => Future.failed(AuthException.InvalidOidcStateException())
+        }
     }
 
     private def startLogin(state: String, nonce: String, codeVerifier: String): Future[OidcLoginTransactionActor.StoreResult] = {
@@ -56,4 +67,11 @@ final class AuthService (
                 "code_challenge_method" -> "S256"
             )
         )
+}
+
+
+sealed abstract class AuthException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
+
+object AuthException {
+    final case class InvalidOidcStateException() extends AuthException("Invalid oidc state")
 }

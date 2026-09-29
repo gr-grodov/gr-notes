@@ -9,16 +9,31 @@ import scala.util.Success
 
 final class AuthRoutes(authService: AuthService) {
     val routes: Route = pathPrefix("api" / "auth") {
-        path("login") {
-            get {
-                login()
+        concat(
+            path("login") {
+                get {
+                    login()
+                }
+            },
+            path("callback") {
+                get {
+                    callback()
+                }
             }
-        }
+        )
     }
 
     private def login(): Route = {
-        onComplete(authService.getSSOAuthorizationUri) {
-            case Success(uri) => redirect(uri, StatusCodes.Found)
+        onSuccess(authService.ssoLoginURI) { uri =>
+            redirect(uri, StatusCodes.Found)
+        }
+    }
+
+    private def callback(): Route = {
+        parameters("code", "state") { (code, state) =>
+            onSuccess(authService.callback(code, state)) { tokens =>
+                complete(StatusCodes.OK)
+            }
         }
     }
 }

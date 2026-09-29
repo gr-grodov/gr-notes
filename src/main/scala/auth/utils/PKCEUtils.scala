@@ -7,7 +7,7 @@ import java.util.Base64
 
 object PKCEUtils {
 
-    private def random = new SecureRandom()
+    private val random = new SecureRandom()
     private val encoder = Base64.getUrlEncoder.withoutPadding()
 
     def generateState(): String = randomToken()

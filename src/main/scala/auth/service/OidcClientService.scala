@@ -45,21 +45,19 @@ final class OidcClientService(
             .flatMap(handleResponse)
     }
 
-    private def handleResponse(response: HttpResponse): Future[TokensInfo] = {
-        response.entity.dataBytes
-            .runFold(ByteString.empty)(_ ++ _)
-            .flatMap { bytes =>
-                val body = bytes.utf8String
-                if (!response.status.isSuccess()) {
-                    Future.failed(OidcClientException.TokenEndpointError(status = response.status.intValue, error = extractOAuthError(body)))
-                } else {
-                    decode[TokensInfo](body) match {
-                        case Right(tokens) => Future.successful(tokens)
-                        case Left(error) => Future.failed(OidcClientException.InvalidTokenResponse(error))
-                    }
+    private def handleResponse(response: HttpResponse): Future[TokensInfo] = response.entity.dataBytes
+        .runFold(ByteString.empty)(_ ++ _)
+        .flatMap { bytes =>
+            val body = bytes.utf8String
+            if (!response.status.isSuccess()) {
+                Future.failed(OidcClientException.TokenEndpointError(status = response.status.intValue, error = extractOAuthError(body)))
+            } else {
+                decode[TokensInfo](body) match {
+                    case Right(tokens) => Future.successful(tokens)
+                    case Left(error) => Future.failed(OidcClientException.InvalidTokenResponse(error))
                 }
             }
-    }
+        }
 
     private def extractOAuthError(body: String): Option[String] = {
         parse(body).toOption.flatMap(_.hcursor.get[String]("error").toOption)

@@ -19,37 +19,36 @@ final case class OidcMetadata(
 
 object OidcMetadata {
 
-    implicit val decoder: Decoder[OidcMetadata] =
-        Decoder.instance { cursor =>
-            for {
-                issuer <- cursor.get[String]("issuer")
+    implicit val decoder: Decoder[OidcMetadata] = Decoder.instance { cursor =>
+        for {
+            issuer <- cursor.get[String]("issuer")
 
-                authorizationEndpoint <- cursor.get[String]("authorization_endpoint")
-                tokenEndpoint <- cursor.get[String]("token_endpoint")
-                jwksUri <- cursor.get[String]("jwks_uri")
-                userinfoEndpoint <- cursor.get[Option[String]]("userinfo_endpoint")
-                endSessionEndpoint <- cursor.get[Option[String]]("end_session_endpoint")
+            authorizationEndpoint <- cursor.get[String]("authorization_endpoint")
+            tokenEndpoint <- cursor.get[String]("token_endpoint")
+            jwksUri <- cursor.get[String]("jwks_uri")
+            userinfoEndpoint <- cursor.get[Option[String]]("userinfo_endpoint")
+            endSessionEndpoint <- cursor.get[Option[String]]("end_session_endpoint")
 
-                tokenEndpointAuthMethodsSupported <- cursor.get[List[String]]("token_endpoint_auth_methods_supported")
-                codeChallengeMethodsSupported <- cursor.get[List[String]]("code_challenge_methods_supported")
+            tokenEndpointAuthMethodsSupported <- cursor.get[List[String]]("token_endpoint_auth_methods_supported")
+            codeChallengeMethodsSupported <- cursor.get[List[String]]("code_challenge_methods_supported")
 
-                idTokenSigningAlgValuesSupported <- cursor.get[List[String]]("id_token_signing_alg_values_supported")
-                scopesSupported <- cursor.get[List[String]]("scopes_supported")
+            idTokenSigningAlgValuesSupported <- cursor.get[List[String]]("id_token_signing_alg_values_supported")
+            scopesSupported <- cursor.get[List[String]]("scopes_supported")
 
-            } yield OidcMetadata(
-                issuer = issuer,
+        } yield OidcMetadata(
+            issuer = issuer,
 
-                authorizationEndpoint = authorizationEndpoint,
-                tokenEndpoint = tokenEndpoint,
-                jwksUri = jwksUri,
-                userinfoEndpoint = userinfoEndpoint,
-                endSessionEndpoint = endSessionEndpoint,
+            authorizationEndpoint = authorizationEndpoint,
+            tokenEndpoint = tokenEndpoint,
+            jwksUri = jwksUri,
+            userinfoEndpoint = userinfoEndpoint,
+            endSessionEndpoint = endSessionEndpoint,
 
-                tokenEndpointAuthMethodsSupported = tokenEndpointAuthMethodsSupported,
-                codeChallengeMethodsSupported = codeChallengeMethodsSupported,
+            tokenEndpointAuthMethodsSupported = tokenEndpointAuthMethodsSupported,
+            codeChallengeMethodsSupported = codeChallengeMethodsSupported,
 
-                idTokenSigningAlgValuesSupported = idTokenSigningAlgValuesSupported,
-                scopesSupported = scopesSupported
-            )
-        }
+            idTokenSigningAlgValuesSupported = idTokenSigningAlgValuesSupported,
+            scopesSupported = scopesSupported
+        )
+    }
 }

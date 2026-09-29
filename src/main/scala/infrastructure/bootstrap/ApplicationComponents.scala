@@ -28,6 +28,6 @@ final class ApplicationComponents(
         "oidc-login-transactions"
     )
     private val oidcClientService = new OidcClientService(config.oidc, oidcMetadata)
-    private val authService = new AuthService(config.oidc, oidcMetadata, oidcLoginTransactionActor)
+    private val authService = new AuthService(config.oidc, oidcMetadata, oidcClientService, oidcLoginTransactionActor)
     val authRoutes = new AuthRoutes(authService)
 }
