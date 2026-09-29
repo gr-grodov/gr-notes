@@ -1,8 +1,9 @@
 package infrastructure.bootstrap
 
 import akka.actor.typed.ActorSystem
+import auth.service.OidcClientService
 import infrastructure.AppConfig
-import infrastructure.auth.{OidcClient, OidcDiscovery, OidcMetadata}
+import infrastructure.auth.{OidcDiscovery, OidcMetadata}
 import notes.domain.repo.DBNotesRepository
 import notes.http.NotesRoutes
 import notes.service.NotesService
@@ -20,5 +21,5 @@ final class ApplicationComponents(
     private val notesService = new NotesService(notesRepository)
     val notesRoutes = new NotesRoutes(notesService)
 
-    val oidcClient = new OidcClient(config.oidc, oidcMetadata)
+    val oidcClientService = new OidcClientService(config.oidc, oidcMetadata)
 }

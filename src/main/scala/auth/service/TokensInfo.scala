@@ -1,4 +1,4 @@
-package infrastructure.auth
+package auth.service
 
 import io.circe.Decoder
 
@@ -7,7 +7,7 @@ final case class TokensInfo(
     refreshToken: Option[String],
     tokenType: String,
     idToken: Option[String],
-    scope: List[String],
+    scope: Option[List[String]],
 )
 
 object TokensInfo {
@@ -17,8 +17,8 @@ object TokensInfo {
                 accessToken <- cursor.get[String]("access_token")
                 refreshToken <- cursor.get[Option[String]]("refresh_token")
                 tokenType <- cursor.get[String]("token_type")
-                idToken <- cursor.get[Option[String]]("idToken")
-                scope <- cursor.get[List[String]]("scope")
+                idToken <- cursor.get[Option[String]]("id_token")
+                scope <- cursor.get[Option[List[String]]]("scope")
             } yield TokensInfo(
                 accessToken = accessToken,
                 refreshToken = refreshToken,

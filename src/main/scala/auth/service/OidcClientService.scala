@@ -1,15 +1,16 @@
-package infrastructure.auth
+package auth.service
 
 import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
 import akka.util.ByteString
+import infrastructure.auth.{OidcConfig, OidcMetadata}
 import io.circe.parser.{decode, parse}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-final class OidcClient(
+final class OidcClientService(
     config: OidcConfig,
     metadata: OidcMetadata
 )(implicit system: ActorSystem[_], ec: ExecutionContext) {
@@ -37,12 +38,7 @@ final class OidcClient(
             method = HttpMethods.POST,
             uri = metadata.tokenEndpoint,
             entity = form.toEntity
-        ).withHeaders(
-            Authorization(BasicHttpCredentials(
-                config.clientId,
-                config.clientSecret
-            ))
-        )
+        ).withHeaders(Authorization(BasicHttpCredentials(config.clientId, config.clientSecret)))
 
         Http()
             .singleRequest(request)
@@ -54,16 +50,13 @@ final class OidcClient(
             .runFold(ByteString.empty)(_ ++ _)
             .flatMap { bytes =>
                 val body = bytes.utf8String
-                if (response.status.isSuccess()) {
+                if (!response.status.isSuccess()) {
+                    Future.failed(OidcClientException.TokenEndpointError(status = response.status.intValue, error = extractOAuthError(body)))
+                } else {
                     decode[TokensInfo](body) match {
                         case Right(tokens) => Future.successful(tokens)
                         case Left(error) => Future.failed(OidcClientException.InvalidTokenResponse(error))
                     }
-
-                } else {
-                    Future.failed(
-                        OidcClientException.TokenEndpointError(status = response.status.intValue, error = extractOAuthError(body))
-                    )
                 }
             }
     }
