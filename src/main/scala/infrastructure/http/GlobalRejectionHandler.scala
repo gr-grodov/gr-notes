@@ -3,6 +3,7 @@ package infrastructure.http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.complete
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, AuthorizationFailedRejection, MethodRejection, MissingHeaderRejection, MissingQueryParamRejection, RejectionHandler, ValidationRejection}
+import auth.http.MissingOrInvalidSession
 import common.domain.ErrorField
 import common.http.ErrorResponse
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
@@ -13,7 +14,7 @@ object GlobalRejectionHandler {
     val handler: RejectionHandler = RejectionHandler
         .newBuilder()
         .handle {
-            case AuthenticationFailedRejection(_, _) =>
+            case MissingOrInvalidSession =>
                 complete(
                     StatusCodes.Unauthorized,
                     ErrorResponse(code = "unauthorized")

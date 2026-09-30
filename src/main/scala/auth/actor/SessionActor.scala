@@ -26,7 +26,7 @@ object SessionActor {
         sessionId: String,
         accessToken: String,
         refreshToken: Option[String],
-        accessTokenExpiresAt: Instant,
+        accessTokenExpiresAt: Long,
         replyTo: ActorRef[UpdateTokensResult]
     ) extends Command
     final case class DeleteSession(
@@ -43,7 +43,7 @@ object SessionActor {
     final case class SessionCreated(sessionId: String) extends CreateSessionResult
 
     sealed trait GetSessionResult
-    final case class SessionFound(session: UserSession) extends GetSessionResult
+    final case class SessionFound(session: OidcSession) extends GetSessionResult
     case object SessionNotFound extends GetSessionResult
 
 
@@ -61,7 +61,7 @@ object SessionActor {
 
 
     private final case class State(
-        sessions: Map[String, UserSession],
+        sessions: Map[String, OidcSession],
         sessionsByOidcSid: Map[String, Set[String]]
     )
 
@@ -72,8 +72,7 @@ object SessionActor {
         case CreateSession(subject, oidcSid, accessToken, refreshToken, accessTokenExpiresAt, replyTo) =>
             val sessionId = UUID.randomUUID().toString
             val now = Instant.now()
-            val session = UserSession(
-                sessionId = sessionId,
+            val session = OidcSession(
                 subject = subject,
                 oidcSid = oidcSid,
                 accessToken = accessToken,
@@ -150,8 +149,7 @@ object SessionActor {
 }
 
 
-final case class UserSession(
-    sessionId: String,
+final case class OidcSession(
     subject: String,
     oidcSid: String,
     accessToken: String,

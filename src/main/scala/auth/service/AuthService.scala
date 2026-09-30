@@ -15,9 +15,8 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 
 final class AuthService (
-    oidcConfig: OidcConfig,
-    oidcMetadata: OidcMetadata,
     oidcClientService: OidcClientService,
+    sessionService: SessionService,
     idTokenValidator: IdTokenValidator,
     loginTransactionActor: ActorRef[OidcLoginTransactionActor.Command]
 ) (implicit system: ActorSystem[_], ec: ExecutionContext) {
@@ -31,26 +30,18 @@ final class AuthService (
         val codeChallenge = PKCEUtils.generateChallenge(codeVerifier)
 
         startLogin(state, nonce, codeVerifier).flatMap {
-            case OidcLoginTransactionActor.Stored => Future.successful(buildAuthorizationUri(state, nonce, codeChallenge))
+            case OidcLoginTransactionActor.Stored => Future.successful(oidcClientService.buildAuthorizationUri(state, nonce, codeChallenge))
             case OidcLoginTransactionActor.AlreadyExists => Future.failed(AuthException.AlreadyExistStateException())
         }
     }
 
-    def callback(code: String, state: String): Future[AuthenticatedTokens] = {
+    def authenticate(code: String, state: String): Future[SessionInfo] = {
         loginTransactionActor.ask[OidcLoginTransactionActor.ConsumeResult] { replyTo =>
             OidcLoginTransactionActor.Consume(state, replyTo)
         }.flatMap {
-            case OidcLoginTransactionActor.ConsumeResult(Some(transaction)) =>
-                oidcClientService.exchangeCode(code = code, codeVerifier = transaction.codeVerifier).flatMap { tokens =>
-                    tokens.idToken match {
-                        case Some(idToken) => idTokenValidator.validate(idToken, transaction.nonce).map(
-                            identity => AuthenticatedTokens(tokens, identity)
-                        )
-                        case None => Future.failed(AuthException.MissingIdTokenException())
-                    }
-                }
+            case OidcLoginTransactionActor.ConsumeResult(Some(transaction)) => getAuthTokensByLoginTransaction(code, transaction)
             case _ => Future.failed(AuthException.InvalidOidcStateException())
-        }
+        }.flatMap { authTokens => sessionService.createSession(authTokens)}
     }
 
     private def startLogin(state: String, nonce: String, codeVerifier: String): Future[OidcLoginTransactionActor.StoreResult] = {
@@ -66,19 +57,16 @@ final class AuthService (
         }
     }
 
-    private def buildAuthorizationUri(state: String, nonce: String, codeChallenge: String): Uri =
-        Uri(oidcMetadata.authorizationEndpoint).withQuery(
-            Uri.Query(
-                "response_type" -> "code",
-                "client_id" -> oidcConfig.clientId,
-                "redirect_uri" -> oidcConfig.redirectUri,
-                "scope" -> oidcConfig.scopes.mkString(" "),
-                "state" -> state,
-                "nonce" -> nonce,
-                "code_challenge" -> codeChallenge,
-                "code_challenge_method" -> "S256"
-            )
-        )
+    private def getAuthTokensByLoginTransaction(code: String, transaction: OidcLoginTransaction): Future[AuthenticatedTokens] = {
+        oidcClientService.exchangeCode(code = code, codeVerifier = transaction.codeVerifier).flatMap { tokens =>
+            tokens.idToken match {
+                case Some(idToken) => idTokenValidator.validate(idToken, transaction.nonce).map(
+                    identity => AuthenticatedTokens(tokens, identity)
+                )
+                case None => Future.failed(AuthException.MissingIdTokenException())
+            }
+        }
+    }
 }
 
 

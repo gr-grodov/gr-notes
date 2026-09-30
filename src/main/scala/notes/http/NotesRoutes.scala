@@ -3,7 +3,7 @@ package notes.http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import auth.http.AuthDirectives.currentUserSub
+import auth.http.AuthDirectives
 import common.http.{ErrorHandler, RouteErrorHandling}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.generic.auto._
@@ -11,19 +11,17 @@ import notes.domain.error.NotesError
 import notes.http.dto.{CreateNoteRequest, UpdateNoteRequest}
 import notes.service.NotesService
 
-import scala.concurrent.ExecutionContext
-
-class NotesRoutes(notesService: NotesService) extends RouteErrorHandling[NotesError] {
+class NotesRoutes(notesService: NotesService, authDirectives: AuthDirectives) extends RouteErrorHandling[NotesError] {
     override def errorHandler: ErrorHandler[NotesError] = NotesErrorHandler
 
     val routes: Route = pathPrefix("api" / "notes") {
-        currentUserSub { userSub =>
+        authDirectives.authenticated { user =>
             concat(
-                getNotes(userSub),
-                getNote(userSub),
-                createNote(userSub),
-                updateNote(userSub),
-                deleteNote(userSub)
+                getNotes(user.userSub),
+                getNote(user.userSub),
+                createNote(user.userSub),
+                updateNote(user.userSub),
+                deleteNote(user.userSub)
             )
         }
     }

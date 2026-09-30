@@ -11,14 +11,14 @@ import io.circe.parser.{decode, parse}
 import scala.concurrent.{ExecutionContext, Future}
 
 final class OidcClientService(
-    config: OidcConfig,
-    metadata: OidcMetadata
+    oidcConfig: OidcConfig,
+    oidcMetadata: OidcMetadata
 )(implicit system: ActorSystem[_], ec: ExecutionContext) {
 
     def exchangeCode(code: String, codeVerifier: String): Future[TokensInfo] = {
         val form = FormData(
             "grant_type" -> "authorization_code",
-            "redirect_uri" -> config.redirectUri,
+            "redirect_uri" -> oidcConfig.redirectUri,
             "code" -> code,
             "code_verifier" -> codeVerifier
         )
@@ -33,12 +33,26 @@ final class OidcClientService(
         executeTokenRequest(form)
     }
 
+    def buildAuthorizationUri(state: String, nonce: String, codeChallenge: String): Uri =
+        Uri(oidcMetadata.authorizationEndpoint).withQuery(
+            Uri.Query(
+                "response_type" -> "code",
+                "client_id" -> oidcConfig.clientId,
+                "redirect_uri" -> oidcConfig.redirectUri,
+                "scope" -> oidcConfig.scopes.mkString(" "),
+                "state" -> state,
+                "nonce" -> nonce,
+                "code_challenge" -> codeChallenge,
+                "code_challenge_method" -> "S256"
+            )
+        )
+
     private def executeTokenRequest(form: FormData): Future[TokensInfo] = {
         val request = HttpRequest(
             method = HttpMethods.POST,
-            uri = metadata.tokenEndpoint,
+            uri = oidcMetadata.tokenEndpoint,
             entity = form.toEntity
-        ).withHeaders(Authorization(BasicHttpCredentials(config.clientId, config.clientSecret)))
+        ).withHeaders(Authorization(BasicHttpCredentials(oidcConfig.clientId, oidcConfig.clientSecret)))
 
         Http()
             .singleRequest(request)
@@ -49,7 +63,6 @@ final class OidcClientService(
         .runFold(ByteString.empty)(_ ++ _)
         .flatMap { bytes =>
             val body = bytes.utf8String
-            println(body)
             if (!response.status.isSuccess()) {
                 Future.failed(OidcClientException.TokenEndpointError(status = response.status.intValue, error = extractOAuthError(body)))
             } else {
