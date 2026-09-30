@@ -32,7 +32,7 @@ final class AuthService (
 
         startLogin(state, nonce, codeVerifier).flatMap {
             case OidcLoginTransactionActor.Stored => Future.successful(buildAuthorizationUri(state, nonce, codeChallenge))
-            case OidcLoginTransactionActor.AlreadyExists => Future.failed(AuthException.InvalidOidcStateException())
+            case OidcLoginTransactionActor.AlreadyExists => Future.failed(AuthException.AlreadyExistStateException())
         }
     }
 

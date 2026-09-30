@@ -3,6 +3,7 @@ package auth.actor
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 
+import java.time.Instant
 import scala.concurrent.duration._
 
 object OidcLoginTransactionActor {
@@ -43,3 +44,10 @@ object OidcLoginTransactionActor {
         active(Map.empty)
     }
 }
+
+final case class OidcLoginTransaction(
+    state: String,
+    nonce: String,
+    codeVerifier: String,
+    createdAt: Instant
+)
