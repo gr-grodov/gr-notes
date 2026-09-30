@@ -8,6 +8,7 @@ final case class TokensInfo(
     tokenType: String,
     idToken: Option[String],
     scope: Option[Seq[String]],
+    expireIn: Long
 )
 
 object TokensInfo {
@@ -18,12 +19,14 @@ object TokensInfo {
             tokenType <- cursor.get[String]("token_type")
             idToken <- cursor.get[Option[String]]("id_token")
             scope <- cursor.get[Option[String]]("scope")
+            expireIn <- cursor.get[Long]("expires_in")
         } yield TokensInfo(
             accessToken = accessToken,
             refreshToken = refreshToken,
             tokenType = tokenType,
             idToken = idToken,
-            scope = scope.map(_.split("\\s+"))
+            scope = scope.map(_.split("\\s+")),
+            expireIn = expireIn
         )
     }
 }

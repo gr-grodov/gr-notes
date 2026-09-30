@@ -4,6 +4,7 @@ import akka.actor.typed.ActorSystem
 import auth.actor.OidcLoginTransactionActor
 import auth.http.AuthRoutes
 import auth.service.{AuthService, OidcClientService}
+import auth.utils.IdTokenValidator
 import infrastructure.AppConfig
 import infrastructure.auth.{OidcDiscovery, OidcMetadata}
 import notes.domain.repo.DBNotesRepository
@@ -28,6 +29,13 @@ final class ApplicationComponents(
         "oidc-login-transactions"
     )
     private val oidcClientService = new OidcClientService(config.oidc, oidcMetadata)
-    private val authService = new AuthService(config.oidc, oidcMetadata, oidcClientService, oidcLoginTransactionActor)
+    private val idTokenValidator = new IdTokenValidator(config.oidc, oidcMetadata)
+    private val authService = new AuthService(
+        config.oidc,
+        oidcMetadata,
+        oidcClientService,
+        idTokenValidator,
+        oidcLoginTransactionActor
+    )
     val authRoutes = new AuthRoutes(authService)
 }

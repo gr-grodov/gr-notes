@@ -36,6 +36,7 @@ lazy val root = (project in file("."))
 
       // JWT (OIDC & OAUTH)
       "com.nimbusds"         % "nimbus-jose-jwt"              % "10.10",
+      "com.nimbusds"         % "oauth2-oidc-sdk"              % "10.10",
       // Logging
       "ch.qos.logback"       % "logback-classic"              % "1.6.4",
 

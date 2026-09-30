@@ -49,6 +49,7 @@ final class OidcClientService(
         .runFold(ByteString.empty)(_ ++ _)
         .flatMap { bytes =>
             val body = bytes.utf8String
+            println(body)
             if (!response.status.isSuccess()) {
                 Future.failed(OidcClientException.TokenEndpointError(status = response.status.intValue, error = extractOAuthError(body)))
             } else {

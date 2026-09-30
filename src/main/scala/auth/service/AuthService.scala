@@ -5,7 +5,7 @@ import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.Uri
 import akka.util.Timeout
 import auth.actor.{OidcLoginTransaction, OidcLoginTransactionActor}
-import auth.utils.PKCEUtils
+import auth.utils.{IdTokenValidator, PKCEUtils}
 import common.logs.Logging
 import infrastructure.auth.{OidcConfig, OidcMetadata}
 
@@ -17,6 +17,7 @@ final class AuthService (
     oidcConfig: OidcConfig,
     oidcMetadata: OidcMetadata,
     oidcClientService: OidcClientService,
+    idTokenValidator: IdTokenValidator,
     loginTransactionActor: ActorRef[OidcLoginTransactionActor.Command]
 ) (implicit system: ActorSystem[_], ec: ExecutionContext) {
 
