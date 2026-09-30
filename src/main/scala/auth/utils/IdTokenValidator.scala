@@ -23,18 +23,18 @@ final class IdTokenValidator(
         new URI(oidcMetadata.jwksUri).toURL
     )
 
-    def validate(idToken: String, expectedNonce: String): Future[ValidatedIdToken] = Future {
+    def validate(idToken: String, expectedNonce: String): Future[IdentityUser] = Future {
         val jwt = JWTParser.parse(idToken)
         val claims: IDTokenClaimsSet = validator.validate(jwt, new Nonce(expectedNonce))
 
-        ValidatedIdToken(
+        IdentityUser(
             subject = claims.getSubject.getValue,
             sid = claims.getSessionID.getValue
         )
     }
 }
 
-final case class ValidatedIdToken(
+final case class IdentityUser(
     subject: String,
     sid: String
 )

@@ -4,8 +4,9 @@ import akka.actor.typed.scaladsl.AskPattern.{Askable, schedulerFromActorSystem}
 import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.Uri
 import akka.util.Timeout
+import auth.actor.OidcLoginTransactionActor.Stored
 import auth.actor.{OidcLoginTransaction, OidcLoginTransactionActor}
-import auth.utils.{IdTokenValidator, PKCEUtils}
+import auth.utils.{IdTokenValidator, IdentityUser, PKCEUtils}
 import common.logs.Logging
 import infrastructure.auth.{OidcConfig, OidcMetadata}
 
@@ -29,15 +30,25 @@ final class AuthService (
         val codeVerifier = PKCEUtils.generateVerifier()
         val codeChallenge = PKCEUtils.generateChallenge(codeVerifier)
 
-        startLogin(state, nonce, codeVerifier).map(_ => buildAuthorizationUri(state, nonce, codeChallenge))
+        startLogin(state, nonce, codeVerifier).flatMap {
+            case OidcLoginTransactionActor.Stored => Future.successful(buildAuthorizationUri(state, nonce, codeChallenge))
+            case OidcLoginTransactionActor.AlreadyExists => Future.failed(AuthException.InvalidOidcStateException())
+        }
     }
 
-    def callback(code: String, state: String): Future[TokensInfo] = {
+    def callback(code: String, state: String): Future[AuthenticatedTokens] = {
         loginTransactionActor.ask[OidcLoginTransactionActor.ConsumeResult] { replyTo =>
             OidcLoginTransactionActor.Consume(state, replyTo)
         }.flatMap {
             case OidcLoginTransactionActor.ConsumeResult(Some(transaction)) =>
-                oidcClientService.exchangeCode(code = code, codeVerifier = transaction.codeVerifier)
+                oidcClientService.exchangeCode(code = code, codeVerifier = transaction.codeVerifier).flatMap { tokens =>
+                    tokens.idToken match {
+                        case Some(idToken) => idTokenValidator.validate(idToken, transaction.nonce).map(
+                            identity => AuthenticatedTokens(tokens, identity)
+                        )
+                        case None => Future.failed(AuthException.MissingIdTokenException())
+                    }
+                }
             case _ => Future.failed(AuthException.InvalidOidcStateException())
         }
     }
@@ -75,4 +86,11 @@ sealed abstract class AuthException(message: String, cause: Throwable = null) ex
 
 object AuthException {
     final case class InvalidOidcStateException() extends AuthException("Invalid oidc state")
+    final case class MissingIdTokenException() extends AuthException("Missing id_token in response")
+    final case class AlreadyExistStateException() extends AuthException("State for OIDC is already exist")
 }
+
+final case class AuthenticatedTokens(
+    tokens: TokensInfo,
+    identityUser: IdentityUser
+)
