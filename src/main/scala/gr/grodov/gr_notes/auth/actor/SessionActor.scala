@@ -1,4 +1,4 @@
-package auth.actor
+package gr.grodov.gr_notes.auth.actor
 
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors

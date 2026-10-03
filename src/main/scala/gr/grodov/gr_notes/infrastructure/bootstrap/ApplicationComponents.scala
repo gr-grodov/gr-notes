@@ -1,6 +1,7 @@
 package gr.grodov.gr_notes.infrastructure.bootstrap
 
 import akka.actor.typed.ActorSystem
+import auth.actor.SessionActor
 import gr.grodov.gr_notes.auth.actor.{OidcLoginTransactionActor, SessionActor}
 import gr.grodov.gr_notes.auth.http.{AuthDirectives, AuthRoutes}
 import gr.grodov.gr_notes.auth.service.{AuthService, OidcClientService, SessionService}
@@ -24,12 +25,12 @@ final class ApplicationComponents(
         OidcLoginTransactionActor(),
         "oidc-login-transactions"
     )
+    private val oidcClientService = new OidcClientService(config.oidc, oidcMetadata)
     private val sessionActor = system.systemActorOf(
-        SessionActor(),
+        SessionActor(oidcClientService),
         "sessions"
     )
     private val sessionService = new SessionService(sessionActor)
-    private val oidcClientService = new OidcClientService(config.oidc, oidcMetadata)
     private val idTokenValidator = new IdTokenValidator(config.oidc, oidcMetadata)
     private val authService = new AuthService(
         oidcClientService,
