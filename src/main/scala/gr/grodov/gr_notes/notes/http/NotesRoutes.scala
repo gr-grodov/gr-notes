@@ -14,7 +14,7 @@ import io.circe.generic.auto._
 class NotesRoutes(notesService: NotesService, authDirectives: AuthDirectives) extends RouteErrorHandling[NotesError] {
     override def errorHandler: ErrorHandler[NotesError] = NotesErrorHandler
 
-    val routes: Route = pathPrefix("api" / "gr/grodov/gr_notes/notesodov/gr_notes/notes") {
+    val routes: Route = pathPrefix("api" / "notes") {
         authDirectives.authenticated { user =>
             concat(
                 getNotes(user.userSub),

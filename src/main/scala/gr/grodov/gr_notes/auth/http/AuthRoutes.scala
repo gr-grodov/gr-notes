@@ -9,7 +9,7 @@ import AuthRoutes.COOKIE_SESSION_ID
 import gr.grodov.gr_notes.auth.service.{AuthService, SessionInfo}
 
 final class AuthRoutes(authService: AuthService) {
-    val routes: Route = pathPrefix("api" / "gr/grodov/gr_notes/auth") {
+    val routes: Route = pathPrefix("api" / "auth") {
         concat(
             path("login") {
                 get {
